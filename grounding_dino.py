@@ -39,7 +39,7 @@ class groudingDINO():
         print(boxes.size()[0])
         if boxes.size()[0]<1:
             return 0, 0
-        cv2.imwrite("annotated_image.jpg", annotated_frame)
+        cv2.imwrite(f"annotated_image_{TEXT_PROMPT}.png", annotated_frame)
         return int((boxes[0][0]*self.image_source.shape[1]).item()), int((boxes[0][1]*self.image_source.shape[0]).item())
 
 if __name__ == '__main__':

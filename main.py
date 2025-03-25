@@ -6,7 +6,9 @@ from rclpy.node import Node
 from std_msgs.msg import Float32, Empty, Float32MultiArray
 import time
 from openai import OpenAI
- 
+
+SLEEP_TIME = 3
+
 client = OpenAI(
     api_key = "sk-BYrhQry5cLABaIUl92DYnSgKzksGvE8PRzSFnXgWCyhsvaJN",
     base_url = "https://api.moonshot.cn/v1",
@@ -24,16 +26,18 @@ def plan():
     # 检测抓取物品 笔 的坐标
     TEXT_PROMPT="pen"
     pick_robot_x, pick_robot_y, pick_robot_z = foo.forward(TEXT_PROMPT)
-    print(TEXT_PROMPT,": ",pick_robot_x, pick_robot_y, pick_robot_z )
+    print(f"{TEXT_PROMPT}: ",pick_robot_x, pick_robot_y, pick_robot_z )
     if pick_robot_x==0 and pick_robot_y==0 and pick_robot_z == 0:
-        pass
+        print("unfind pick object")
+        return
 
     # 检测放置位置 盒子 的坐标
     TEXT_PROMPT="box"
     place_robot_x, place_robot_y, place_robot_z = foo.forward(TEXT_PROMPT)
-    print(TEXT_PROMPT,": ",place_robot_x, place_robot_y, place_robot_z )
+    print(f"{TEXT_PROMPT}: ",place_robot_x, place_robot_y, place_robot_z )
     if place_robot_x==0 and place_robot_y==0 and place_robot_z == 0:
-        pass
+        print("unfind place object")
+        return
     
     # 抓取物品
     foo.move_and_pick(pick_robot_x, pick_robot_y, pick_robot_z)
@@ -41,7 +45,7 @@ def plan():
     # 放置物品
     foo.move_and_place(place_robot_x, place_robot_y, place_robot_z)
 """
-task_description = "把杯子放到盒子里"
+task_description = "把黑色胶带放到蓝色盒子里"
 
 
 class VLMBot(Node):
@@ -62,19 +66,23 @@ class VLMBot(Node):
         pixel_x, pixel_y = self.detect_handler.forward(TEXT_PROMPT)
         if pixel_x==0 and pixel_y == 0 :
             return 0,0,0 
-        # print(f"locate pixel index x {pixel_x} y {pixel_y}")
+        print(f"{TEXT_PROMPT} locate pixel index x {pixel_x} y {pixel_y}")
 
         camera_x,camera_y,camera_z = self.camera_handler.location(pixel_x,pixel_y)
-        # print(f"locate camera index x {camera_x} y {camera_y} z {camera_z}")
+        if camera_x==0 and camera_y == 0 and camera_z == 0 :
+            return 0,0,0 
+        print(f"{TEXT_PROMPT} locate camera index x {camera_x} y {camera_y} z {camera_z}")
 
         robot_x, robot_y, robot_z = self.hand_eye_mapper.map(camera_x,camera_y,camera_z)
-        # print(f"transformed robot index x {robot_x} y {robot_y} z {robot_z}")
+        if robot_x==0 and robot_y == 0 and robot_z == 0 :
+            return 0,0,0 
+        print(f"{TEXT_PROMPT} transformed robot index x {robot_x} y {robot_y} z {robot_z}")
         return robot_x, robot_y, robot_z
     
     def reset(self):
         msg = Empty()
         self.reset_trigger.publish(msg)
-        time.sleep(5)
+        time.sleep(SLEEP_TIME)
         self.get_logger().info('Published to /robot_reset_trigger')
 
     def cartesian_move(self, x, y, z):
@@ -85,7 +93,7 @@ class VLMBot(Node):
         msg = Float32MultiArray()
         msg.data = [x, y, z]
         self.cartesian_move_controller.publish(msg)
-        time.sleep(4)
+        time.sleep(SLEEP_TIME)
         self.get_logger().info(f'Published to /robot_cartesian_move: {msg.data}')
     
     def gripper_control(self,open):
@@ -118,13 +126,13 @@ class VLMBot(Node):
         self.reset()
 
 
-def main():
+def main_user_define():
     rclpy.init()
     foo = VLMBot()
 
     try:
         for i in range(3):
-            time.sleep(5)
+            time.sleep(SLEEP_TIME)
             foo.reset()
             foo.gripper_control(open=True)
             foo.gripper_control(open=False)
@@ -157,11 +165,11 @@ def main():
 
 
 if __name__ == '__main__':
-    
+
     rclpy.init()
     foo = VLMBot()
     try:
-        time.sleep(3)
+        time.sleep(SLEEP_TIME)
         foo.reset()
         foo.gripper_control(open=True)
         foo.gripper_control(open=False)
@@ -185,6 +193,12 @@ if __name__ == '__main__':
         # 确保资源正确释放
         foo.destroy_node()
         rclpy.shutdown()
+
+    # rclpy.init()
+    # foo = VLMBot()
+    # TEXT_PROMPT="adhesive tape"
+    # pick_robot_x, pick_robot_y, pick_robot_z = foo.forward(TEXT_PROMPT)
+    # print(TEXT_PROMPT,": ",pick_robot_x, pick_robot_y, pick_robot_z )
 
 
 
