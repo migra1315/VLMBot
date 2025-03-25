@@ -42,6 +42,7 @@ class realsense_camera():
     def get_image(self):
         intr, depth_intrin, rgb, depth, aligned_depth_frame = self.get_aligned_images() #获取对齐的图像与相机内参
         cv2.imwrite("detect_img.png",rgb)
+        print("save image success ...")
 
     def location(self,x,y):
         intr, depth_intrin, rgb, depth, aligned_depth_frame = self.get_aligned_images() #获取对齐的图像与相机内参

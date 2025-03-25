@@ -33,3 +33,6 @@ bert-base-uncased/vocab.txt
 __pycache__/grounding_dino.cpython-310.pyc
 __pycache__/hand_eye_map.cpython-310.pyc
 __pycache__/realsense.cpython-310.pyc
+annotated_image.jpg
+detect_img.png
+chatbot.py

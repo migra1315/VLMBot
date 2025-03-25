@@ -42,4 +42,5 @@ class hand_eye_map():
 
 if __name__ == '__main__':
     handler = hand_eye_map()
-    handler.map()
+    res = handler.map(0.033707812428474426, 0.09388741105794907, 0.5550000071525574)
+    print(res)
