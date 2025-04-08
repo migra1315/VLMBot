@@ -2,13 +2,14 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import json
+import matplotlib.pyplot as plt
 
 class realsense_camera():
     def __init__(self):
         self.pipeline = rs.pipeline()  #定义流程pipeline
         self.config = rs.config()   #定义配置config
-        self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)  #配置depth流
-        self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)   #配置color流
+        self.config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 15)  #配置depth流
+        self.config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 15)   #配置color流
         self.profile = self.pipeline.start(self.config)  #流程开始
         self.align_to = rs.stream.color  #与color流对齐
         self.align = rs.align(self.align_to)
@@ -41,8 +42,17 @@ class realsense_camera():
         return intr, depth_intrin, color_image, depth_image, aligned_depth_frame
     def get_image(self):
         intr, depth_intrin, rgb, depth, aligned_depth_frame = self.get_aligned_images() #获取对齐的图像与相机内参
-        cv2.imwrite("detect_img.png",rgb)
-        print("save image success ...")
+        cv2.imwrite("outputs/color.png",rgb)
+        cv2.imwrite("outputs/depth.png",depth)
+
+        plt.imshow(depth)
+
+        plt.axis('off')
+        plt.savefig(
+            f"outputs/depth_color.png",
+            bbox_inches="tight", dpi=300, pad_inches=0.0
+        )
+
 
     def location(self,x,y):
         intr, depth_intrin, rgb, depth, aligned_depth_frame = self.get_aligned_images() #获取对齐的图像与相机内参
@@ -52,3 +62,7 @@ class realsense_camera():
         
         return camera_coordinate[0],camera_coordinate[1],camera_coordinate[2]
             
+
+if __name__ == '__main__':
+    foo = realsense_camera()
+    foo.get_image()

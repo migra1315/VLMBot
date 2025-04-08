@@ -38,6 +38,11 @@ class hand_eye_map():
         p_target_in_camera = self.R_T_to_RT(r_target_in_camera,t_target_in_camera)
         res = self.RT_camera_to_base@p_target_in_camera
         return res[0][3],res[1][3],res[2][3]
+    
+    def map_rt(self,rotation, translation):
+        p_target_in_camera = self.R_T_to_RT(rotation, translation)
+        res = self.RT_camera_to_base@p_target_in_camera
+        return res
 
 
 if __name__ == '__main__':

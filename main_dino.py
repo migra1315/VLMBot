@@ -7,7 +7,7 @@ from std_msgs.msg import Float32, Empty, Float32MultiArray
 import time
 from openai import OpenAI
 
-SLEEP_TIME = 3
+SLEEP_TIME = 4
 
 client = OpenAI(
     api_key = "sk-BYrhQry5cLABaIUl92DYnSgKzksGvE8PRzSFnXgWCyhsvaJN",
@@ -45,10 +45,10 @@ def plan():
     # 放置物品
     foo.move_and_place(place_robot_x, place_robot_y, place_robot_z)
 """
-task_description = "把黑色胶带放到蓝色盒子里"
+task_description = "把瓶子放到蓝色盒子里"
 
 
-class VLMBot(Node):
+class VLMBot_dino(Node):
     def __init__(self):
         Node.__init__(self, "VLMBot")
         self.gripper_controller = self.create_publisher(Float32, 'chingtek_position_controller', 10)
@@ -62,13 +62,13 @@ class VLMBot(Node):
 
     def forward(self,TEXT_PROMPT="mouse"):
         self.camera_handler.get_image()
-        self.detect_handler.load_image("detect_img.png")
+        self.detect_handler.load_image("outputs/color.png")
         pixel_x, pixel_y = self.detect_handler.forward(TEXT_PROMPT)
         if pixel_x==0 and pixel_y == 0 :
             return 0,0,0 
         print(f"{TEXT_PROMPT} locate pixel index x {pixel_x} y {pixel_y}")
 
-        camera_x,camera_y,camera_z = self.camera_handler.location(pixel_x,pixel_y)
+        camera_x,camera_y,camera_z = self.camera_handler.location(pixel_x, pixel_y)
         if camera_x==0 and camera_y == 0 and camera_z == 0 :
             return 0,0,0 
         print(f"{TEXT_PROMPT} locate camera index x {camera_x} y {camera_y} z {camera_z}")
@@ -89,9 +89,9 @@ class VLMBot(Node):
         if x==0 and y==0 and z == 0:
             self.get_logger().info(f'invalid input ...')
             return
-        z = 0.005 if z < 0.005 else z
+        z = 0.01 if z < 0.01 else z
         msg = Float32MultiArray()
-        msg.data = [x, y, z]
+        msg.data = [x, y, z,1.0,0.0,0.0,0.0]
         self.cartesian_move_controller.publish(msg)
         time.sleep(SLEEP_TIME)
         self.get_logger().info(f'Published to /robot_cartesian_move: {msg.data}')
@@ -108,7 +108,7 @@ class VLMBot(Node):
         self.get_logger().info(f'Published to chingtek_position_controller: {msg.data}')
     
     def move_and_pick(self,pick_robot_x, pick_robot_y, pick_robot_z):
-        pick_prepare_z = 0.2 if pick_robot_z<0.1 else pick_robot_z + 0.05
+        pick_prepare_z = 0.1 if pick_robot_z<0.1 else pick_robot_z + 0.05
         self.cartesian_move(pick_robot_x, pick_robot_y, pick_prepare_z)
 
         self.cartesian_move(pick_robot_x, pick_robot_y, pick_robot_z)
@@ -128,7 +128,7 @@ class VLMBot(Node):
 
 def main_user_define():
     rclpy.init()
-    foo = VLMBot()
+    foo = VLMBot_dino()
 
     try:
         for i in range(3):
@@ -167,7 +167,7 @@ def main_user_define():
 if __name__ == '__main__':
 
     rclpy.init()
-    foo = VLMBot()
+    foo = VLMBot_dino()
     try:
         time.sleep(SLEEP_TIME)
         foo.reset()

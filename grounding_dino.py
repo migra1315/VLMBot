@@ -20,7 +20,7 @@ class groudingDINO():
         self.FP16_INFERENCE = True
         self.model = load_model(CONFIG_PATH, CHECKPOINT_PATH)
 
-    def load_image(self, IMAGE_PATH="detect_img.png"):
+    def load_image(self, IMAGE_PATH="outputs/color.png"):
         self.image_source, self.image = load_image(IMAGE_PATH)
         if self.FP16_INFERENCE:
             self.image = self.image.half()
@@ -36,10 +36,9 @@ class groudingDINO():
             device=self.DEVICE,
         )
         annotated_frame = annotate(image_source=self.image_source, boxes=boxes, logits=logits, phrases=phrases)
-        print(boxes.size()[0])
         if boxes.size()[0]<1:
             return 0, 0
-        cv2.imwrite(f"annotated_image_{TEXT_PROMPT}.png", annotated_frame)
+        cv2.imwrite(f"outputs/DINO/annotated_image_{TEXT_PROMPT}.png", annotated_frame)
         return int((boxes[0][0]*self.image_source.shape[1]).item()), int((boxes[0][1]*self.image_source.shape[0]).item())
 
 if __name__ == '__main__':
