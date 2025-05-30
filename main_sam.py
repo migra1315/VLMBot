@@ -66,15 +66,16 @@ class VLMBot_sam(Node):
 
     def forward(self,TEXT_PROMPT="mouse"):
         # 采集图像
-        # self.camera_handler.get_image()
+        self.camera_handler.get_image()
 
         # 生成mask
         self.detect_handler.forward(TEXT_PROMPT)
+        
         #生成抓取姿态
-        rotation, translation = self.graspnet.forward()
+        translation, rotation = self.graspnet.forward()
 
-        res = self.hand_eye_mapper.map_rt(rotation,translation)
-        return res
+        # res_position,res_euler = self.hand_eye_mapper.map_rt(rotation,translation)
+        return translation, rotation 
 
     
     def reset(self):
@@ -166,36 +167,15 @@ if __name__ == '__main__':
     rclpy.init()
     try:
         foo = VLMBot_sam()
-        TEXT_PROMPT="blue box"
-        target_pose = foo.forward(TEXT_PROMPT)
-        print(target_pose)
+        TEXT_PROMPT="blue knife"
+        res_position,res_euler  = foo.forward(TEXT_PROMPT)
+        print(TEXT_PROMPT,res_position, res_euler )
 
+        TEXT_PROMPT="red lighter"
+        res_position,res_euler  = foo.forward(TEXT_PROMPT)
+        print(TEXT_PROMPT,res_position, res_euler )
+ 
     finally:
         foo.destroy_node()
         rclpy.shutdown()
 
-    # foo = VLMBot_sam()
-    # try:
-    #     time.sleep(SLEEP_TIME)
-    #     foo.reset()
-    #     foo.gripper_control(open=True)
-    #     foo.gripper_control(open=False)
-    #     foo.gripper_control(open=True)
-    #     completion = client.chat.completions.create(
-    #     model = "moonshot-v1-8k",
-    #     messages = [
-    #         {"role": "system", "content": api_description},
-            
-    #         {"role": "user", "content": f"你的任务是{task_description}"}
-    #     ],
-    #     temperature = 0.3,)
-
-    #     plan_code = completion.choices[0].message.content
-    #     print(plan_code)
-    #     exec(plan_code)
-    #     plan()
-
-    # finally:
-    #     # 确保资源正确释放
-    #     foo.destroy_node()
-    #     rclpy.shutdown()

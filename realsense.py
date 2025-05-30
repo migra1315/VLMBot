@@ -8,50 +8,69 @@ class realsense_camera():
     def __init__(self):
         self.pipeline = rs.pipeline()  #定义流程pipeline
         self.config = rs.config()   #定义配置config
+
+        # 获取设备序列号
+        # ctx = rs.context()
+        # devices = ctx.query_devices()
+        # if len(devices) < 2:
+        #     print("需要至少两个连接的 RealSense 设备")
+        #     exit()
+
+        # 获取序列号
+        # serial1 = devices[0].get_info(rs.camera_info.serial_number)
+        # serial2 = devices[1].get_info(rs.camera_info.serial_number)
+        # print(serial1)
+        # print(serial2)
+        self.config.enable_device('040322071066')
+
         self.config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 15)  #配置depth流
         self.config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 15)   #配置color流
         self.profile = self.pipeline.start(self.config)  #流程开始
         self.align_to = rs.stream.color  #与color流对齐
         self.align = rs.align(self.align_to)
+        
 
     def get_aligned_images(self):
-        frames = self.pipeline.wait_for_frames()  #等待获取图像帧
-        aligned_frames = self.align.process(frames)  #获取对齐帧
-        aligned_depth_frame = aligned_frames.get_depth_frame()  #获取对齐帧中的depth帧
-        color_frame = aligned_frames.get_color_frame()   #获取对齐帧中的color帧
+        for i in range(30):
+            colorizer = rs.colorizer()  
+            frames = self.pipeline.wait_for_frames()  #等待获取图像帧
+            aligned_frames = self.align.process(frames)  #获取对齐帧
+            aligned_depth_frame = aligned_frames.get_depth_frame()  #获取对齐帧中的depth帧
+            color_frame = aligned_frames.get_color_frame()   #获取对齐帧中的color帧
 
-        ############### 相机参数的获取 #######################
-        intr = color_frame.profile.as_video_stream_profile().intrinsics   #获取相机内参
-        depth_intrin = aligned_depth_frame.profile.as_video_stream_profile().intrinsics  #获取深度参数（像素坐标系转相机坐标系会用到）
-        camera_parameters = {'fx': intr.fx, 'fy': intr.fy,
-                            'ppx': intr.ppx, 'ppy': intr.ppy,
-                            'height': intr.height, 'width': intr.width,
-                            'depth_scale': self.profile.get_device().first_depth_sensor().get_depth_scale()
-                            }
-        # 保存内参到本地
-        with open('./intrinsics.json', 'w') as fp:
-            json.dump(camera_parameters, fp)
-        #######################################################
-        
-        depth_image = np.asanyarray(aligned_depth_frame.get_data())  #深度图（默认16位）
-        depth_image_8bit = cv2.convertScaleAbs(depth_image, alpha=0.03)  #深度图（8位）
-        depth_image_3d = np.dstack((depth_image_8bit,depth_image_8bit,depth_image_8bit))  #3通道深度图
-        color_image = np.asanyarray(color_frame.get_data())  # RGB图
+            ############### 相机参数的获取 #######################
+            intr = color_frame.profile.as_video_stream_profile().intrinsics   #获取相机内参
+            depth_intrin = aligned_depth_frame.profile.as_video_stream_profile().intrinsics  #获取深度参数（像素坐标系转相机坐标系会用到）
+            camera_parameters = {'fx': intr.fx, 'fy': intr.fy,
+                                'ppx': intr.ppx, 'ppy': intr.ppy,
+                                'height': intr.height, 'width': intr.width,
+                                'depth_scale': self.profile.get_device().first_depth_sensor().get_depth_scale()
+                                }
+            # 保存内参到本地
+            with open('./intrinsics.json', 'w') as fp:
+                json.dump(camera_parameters, fp)
+            #######################################################
+            
+            depth_image = np.asanyarray(aligned_depth_frame.get_data())  #深度图（默认16位）
+            color_image = np.asanyarray(color_frame.get_data())  # RGB图
+
+            colorizer_depth = np.asanyarray(colorizer.colorize(aligned_depth_frame).get_data())
         
         #返回相机内参、深度参数、彩色图、深度图、齐帧中的depth帧
-        return intr, depth_intrin, color_image, depth_image, aligned_depth_frame
+        return intr, depth_intrin, color_image, depth_image, colorizer_depth
+    
     def get_image(self):
-        intr, depth_intrin, rgb, depth, aligned_depth_frame = self.get_aligned_images() #获取对齐的图像与相机内参
+        intr, depth_intrin, rgb, depth, colorizer_depth = self.get_aligned_images() #获取对齐的图像与相机内参
         cv2.imwrite("outputs/color.png",rgb)
         cv2.imwrite("outputs/depth.png",depth)
 
-        plt.imshow(depth)
-
+        plt.imshow(colorizer_depth)
         plt.axis('off')
         plt.savefig(
             f"outputs/depth_color.png",
             bbox_inches="tight", dpi=300, pad_inches=0.0
         )
+        # plt.show()
 
 
     def location(self,x,y):

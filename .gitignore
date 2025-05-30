@@ -64,3 +64,17 @@ graspnet_baseline/*.egg
 graspnet_baseline/**/*.egg-info/**
 graspnet_baseline/logs
 graspnet_baseline/dataset/tolerance
+URRobot/__pycache__/__init__.cpython-310.pyc
+URRobot/__pycache__/chingtek.cpython-310.pyc
+URRobot/__pycache__/UR_Robot.cpython-38.pyc
+URRobot/__pycache__/UR_Robot.cpython-310.pyc
+URRobot/__pycache__/util.cpython-38.pyc
+URRobot/__pycache__/util.cpython-310.pyc
+URRobot/utils/__pycache__/__init__.cpython-38.pyc
+URRobot/utils/__pycache__/__init__.cpython-310.pyc
+URRobot/utils/__pycache__/chingtek.cpython-38.pyc
+URRobot/utils/__pycache__/chingtek.cpython-310.pyc
+URRobot/utils/__pycache__/transform_util.cpython-38.pyc
+URRobot/utils/__pycache__/transform_util.cpython-310.pyc
+URRobot/utils/__pycache__/UR_Robot.cpython-38.pyc
+URRobot/utils/__pycache__/UR_Robot.cpython-310.pyc
