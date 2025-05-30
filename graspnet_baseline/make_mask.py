@@ -24,13 +24,13 @@ def make_gray():
     image = np.zeros((height, width), dtype=np.uint8)
 
     # 设置指定区域的像素值为 1
-    x_start, x_end = 0, 1279
-    y_start, y_end = 285, 1279
+    x_start, x_end = 500, 1279 
+    y_start, y_end =0, 520
 
     image[y_start:y_end, x_start:x_end] =  255
 
     # 将图像保存为 PNG 文件
-    cv2.imwrite('/home/ju/Workspace/VLMBot/graspnet-baseline/doc/example_data/workspace_mask.png', image)
+    cv2.imwrite('./outputs/workspace_mask.png', image)
 
     print("图像生成完成，已保存为 output.png")
 
@@ -56,5 +56,5 @@ def show():
         # 销毁所有窗口
         cv2.destroyAllWindows()
 
-show()
-# make_gray()
+# show()
+make_gray()

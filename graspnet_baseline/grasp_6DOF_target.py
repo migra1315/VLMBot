@@ -36,13 +36,84 @@ class predicter_6DOF_target():
         gg = self.get_grasps(self.net, end_points)
         if self.collision_thresh > 0:
             gg = self.collision_detection(gg, np.array(cloud.points))
-        if vis:
-            self.vis_grasps(gg, cloud)
+        # if vis:
+        #     self.vis_grasps(gg, cloud)
         gg.nms()
         gg.sort_by_score()
-        gg = gg[:1]
-        print(gg.rotation_matrices.shape)
-        return gg.rotation_matrices.squeeze(0), gg.translations
+
+        # ===== 筛选部分:对抓取预测的接近方向进行垂直角度限制=====
+        #将 gg 转换为普通列表 
+        all_grasps = list(gg)
+        vertical = np.array([0,0,1])# 期望抓取接近方向(垂直桌面) 
+        angle_threshold = np.deg2rad(30) # 30度的弧度值 
+        filtered = []
+        for grasp in all_grasps:
+            # 抓取的接近方向取grasp.rotation_matrix的第一列 
+            approach_dir = grasp.rotation_matrix[:,0]
+            # 计算夹角:cos(angle)=dot(approach_dir, vertical) 
+            cos_angle = np.dot(approach_dir, vertical) 
+            cos_angle = np.clip(cos_angle,-1.0,1.0) 
+            angle = np.arccos(cos_angle) 
+            if angle < angle_threshold:
+                filtered.append(grasp)
+        if len(filtered) ==0:
+            print("\n[Warning] No grasp predictions within vertical angle threshold. Using all predictions.") 
+            filtered = all_grasps 
+        else:
+            print(f"\n[DEBUG] Filtered {len(filtered)} grasps within ±30° of vertical out of {len(all_grasps)} total predictions.")
+        
+
+        #对过滤后的抓取根据score排序(降序)
+        filtered.sort(key=lambda g: g.score, reverse=True)
+        #取前50个抓取(如果少于50个,则全部使用);此处示例中取前1 
+        top_grasps = filtered[:10]
+
+        if vis:
+            #可视化过滤后的抓取,手动转换为0pen3D物体
+            grippers = [g.to_open3d_geometry() for g in top_grasps]
+            print(f"\nVisualizing top {len(top_grasps)} graspsafter filtering...") 
+            o3d.visualization.draw_geometries([cloud, *grippers])
+
+        #选择得分最高的抓取(filtered列表已按得分降序排序排序) 
+        best_grasp = top_grasps[0]
+        best_translation = best_grasp.translation
+        best_rotation = best_grasp.rotation_matrix 
+        best_width = best_grasp.width *1000
+        if best_width >= 100:
+            best_width = 100
+        # print(best_translation, best_rotation, best_[width)
+        # return best_translation, best_rotation, best_width
+
+        # gg = filtered[:1]
+        # # 提取旋转矩阵部分
+        # R = gg.rotation_matrices.squeeze(0)
+        R = best_rotation
+    
+        # 坐标系转换
+        R_adjust = np.array([
+            [0,0,1],
+            [1,0,0],
+            [0,1,0]
+        ],dtype=np.float32)
+
+        R = R @ R_adjust
+
+        #计算欧拉角
+        sy = np.sqrt(R[0][0] * R[0][0] + R[1][0] * R[1][0])
+        singular = sy < 1e-6
+
+        if not singular:
+            x = np.arctan2(R[2][1], R[2][2])
+            y = np.arctan2(-R[2][0], sy)
+            z = np.arctan2(R[1][0], R[0][0])
+        else:
+            x = np.arctan2(-R[1][2], R[1][1])
+            y = np.arctan2(-R[2][0], sy)
+            z = 0
+
+        euler_angles = np.asarray([x, y, z])
+
+        return best_translation, euler_angles
 
     def get_net(self):
         # Init the model
@@ -67,7 +138,7 @@ class predicter_6DOF_target():
 
         workspace_mask = (workspace_mask_uint8 == 255)
         # meta = scio.loadmat(os.path.join(data_dir, 'meta.mat'))
-        intrinsic = [[912.5797119140625, 0, 638.57470703125], [0, 912.6864624023438, 349.6040344238281], [0, 0, 1]]#meta['intrinsic_matrix']
+        intrinsic = [[910.3829956054688, 0, 628.5571899414062], [0, 910.4645385742188, 355.1884460449219], [0, 0, 1]]#meta['intrinsic_matrix']
         factor_depth = 0.0010000000474974513*1000*1000 #meta['factor_depth']
 
         # generate cloud
@@ -129,6 +200,6 @@ class predicter_6DOF_target():
     
 if __name__=='__main__':
     foo = predicter_6DOF_target()
-    print(foo.forward(True))
+    print(foo.forward(False))
 
 

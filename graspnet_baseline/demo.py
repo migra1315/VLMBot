@@ -25,7 +25,7 @@ from collision_detector import ModelFreeCollisionDetector
 from data_utils import CameraInfo, create_point_cloud_from_depth_image
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--checkpoint_path', default='/home/ju/Workspace/VLMBot/graspnet-baseline/logs/logs_rs/checkpoint-rs.tar',help='Model checkpoint path')
+parser.add_argument('--checkpoint_path', default='graspnet_baseline/logs/logs_rs/checkpoint-rs.tar',help='Model checkpoint path')
 parser.add_argument('--num_point', type=int, default=20000, help='Point Number [default: 20000]')
 parser.add_argument('--num_view', type=int, default=300, help='View Number [default: 300]')
 parser.add_argument('--collision_thresh', type=float, default=0.01, help='Collision Threshold in collision detection [default: 0.01]')
